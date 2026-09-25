@@ -1,3 +1,4 @@
 .env
 airflow-docker/logs/
 .DS_Store
+hn_trends.duckdb
