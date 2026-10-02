@@ -5,7 +5,8 @@ airflow/logs/
 .DS_Store
 
 #duckdb
-data/
+data/*
+!data/.gitkeep
 
 #virtual environment
 .venv/
