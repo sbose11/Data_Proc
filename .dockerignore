@@ -1,0 +1,13 @@
+data/
+**/.venv/
+**dbt/target/
+**/dbt/logs/
+**/dbt/dbt_paackages
+
+airflow/logs/
+airflow/.env
+
+.git/
+.vscode/
+.idea/
+**/__pycache__/

@@ -1,6 +1,11 @@
 #airflow
 airflow/.env
 airflow/logs/
+
 .DS_Store
+
 #duckdb
 data/
+
+#virtual environment
+.venv/
