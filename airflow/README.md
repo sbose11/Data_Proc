@@ -11,8 +11,8 @@
        ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags  #default value of AIRFLOW_PROJ_DIR = . (airflow/)
        ../projects/hn_trends_explorer/dags:/opt/airflow/dags/hn_trends_explorer
     ```
-7. This helps with better organization of dags as it will confine the dags related to hacker_news under the hacker_news folder.
-8. It will help with easy maintainence of dags.  
+7. This helps with better organization and maintainance of dags as it will confine the dags related to hacker_news under the hacker_news folder.
+ 
 ----------------------------------------
 
 ## To build the docker image and get it running

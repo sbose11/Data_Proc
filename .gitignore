@@ -10,3 +10,9 @@ data/*
 
 #virtual environment
 .venv/
+
+#raw data that is pulled by api 
+projects/hn_trends_explorer/data_acquisition/raw_data/
+
+#archived files 
+projects/hn_trends_explorer/archive/

@@ -1,4 +1,4 @@
-#This docker image has python 3.12 as default python version 
+#This docker image has Python 3.13.14 as default python version 
 FROM apache/airflow:3.3.1  
 
 USER root
