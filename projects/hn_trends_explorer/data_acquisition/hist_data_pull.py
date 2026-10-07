@@ -1,8 +1,9 @@
 import requests 
 import logging
 from pathlib import Path
+import shutil
 import time
-from datetime import date,  datetime, timedelta, timezone#,  time as dt_time
+from datetime import date,  datetime, timedelta, timezone,  time as dt_time
 import json 
 
 
@@ -39,13 +40,16 @@ class DataLoad:
                 "timestamp": self._exec_ts
                 }
 
-    #will return the start_date and timestamp after calculating the data pull window based on tdelta passed in 
-    def calc_start_dt(self, tdelta:int):
-       start_dt_tm = self._exec_dt_tm - timedelta(days=tdelta)
-       start_ts = start_dt_tm.timestamp()
-       return {"datetime": start_dt_tm, 
-               "timestamp": start_ts
-               }
+
+    # get list of dates for which data needs to be pulled 
+    def dates_list(self, tdelta:int):
+        if tdelta < 7:
+            end_dt = self._exec_dt_tm.date()
+            return [end_dt - timedelta(days=i) for i in range(tdelta)]
+        else:
+            return []
+            
+       
 
     def get_stories(self, start_ts, end_ts):
 
@@ -86,21 +90,40 @@ class DataLoad:
             self._logger.error(f"Exception occured when getting data from comment_endpoint:{h_err}") 
         except Exception as err:
             self._logger.error(f"Exception occured when pulling from comment api -  {err}")
+    
+    def set_local_directory(self, dt :str):
+        #set the file path where we want to store the data 
+        filepath = Path(f"{self._base_dir}/raw_data/{dt}/")
 
+        if filepath.exists():
+            shutil.rmtree(filepath)
+
+        #helps with dynamic creation of directories
+        filepath.mkdir(parents=True, exist_ok = True)
+        self._logger.info(f"Filepath set to - {filepath}")
+       
+        #create the type subfolders under it 
+        sub_folder1 = filepath/"comment"
+        sub_folder2 = filepath/"story"
+
+        sub_folder1.mkdir(parents=True, exist_ok = True)
+        sub_folder2.mkdir(parents=True, exist_ok = True)
+
+        return filepath
    
     #type shows if the file is of type 'story' or 'comment'
     #ts is the timestamp when the story/comment was created
-    def write_json(self, data, type:str, ts, story_id):
-        
-        exec_dt = self._exec_dt_tm.date()
+    def write_json(self, data, fpath :str, type: str,  ts, story_id):
+
         #set the file path where we want to store the data 
-        filepath = Path(f"{self._base_dir}/raw_data/{exec_dt}/{type}/{story_id}_{ts}.json")
+        #filepath = Path(f"{self._base_dir}/raw_data/{dt}/{type}/{story_id}_{ts}.json")
         #self._logger.info(f"Filepath set to - {filepath}")
 
         #helps with dynamic creation of directories
-        filepath.parent.mkdir(parents=True, exist_ok = True)
+        #filepath.parent.mkdir(parents=True, exist_ok = True)
        
-        #wite this file 
+        filepath = Path(f"{fpath}/{type}/{story_id}_{ts}.json")
+        #write this file 
         try:
             with open(filepath, "w",encoding= "utf-8") as file:
                 json.dump(data, file, indent=4)
@@ -123,65 +146,71 @@ def main():
     #using half of a second as min_interval to control api calls
     throttle = Throttle(min_interval=0.50) 
     
-    #As of now we are pulling all the data starting 1 day prior to the programs execution date
+    #Set this variable to control how many days of data we want to pull
+    # as of now it will pull only for the day the script is executing
+    #if we want to pull yesterday and today set it to 2 and so on
     delta_days = 1 ; 
     
     dl = DataLoad()
     
+    days_list = dl.dates_list(delta_days)
+    if not days_list: 
+        logger.error("Set delta_days to a value less than 7 to continue with the data pull.")
+    else: 
+        for day in days_list:
+            start_dttm= datetime.combine(day, dt_time.min, tzinfo=timezone.utc)
+            start_ts = start_dttm.timestamp()
+            end_dttm =  datetime.combine(day, dt_time.max, tzinfo=timezone.utc)
+            end_ts = end_dttm.timestamp()
 
-    start_window = dl.calc_start_dt(delta_days)
-    end_window = dl.execution_dt
-    
-    
-    end_ts = end_window["timestamp"]
-    start_ts = start_window["timestamp"]
-
-    logger.info(f"Start dt and timestamp in UTC are set to : {start_window['datetime']}   {start_window['timestamp']}")
-    logger.info(f"End dt and timestamp in UTC are set to : {end_window['datetime']}   {end_window['timestamp']}")
-    
-    curr_max_ts = end_ts
-    
-    while curr_max_ts >= start_ts:
-
-        #the search url will return 1000 hits/results maximum. If we want ee can break it(1000 hits) into 10 pages or 100 
-        #but the problem is we cannot get more than 1000 results at a time. 
-        #We are trying to get all stories submitted since yesterday, that number can be > 1000 so 
-        #we have to iterate or call the api multiple times with a different  timestamp filter to 
-        #return all the stories submitted between the timestamp values 
-        raw_data = dl.get_stories(start_ts, curr_max_ts)
-
-        #extract the hits list from raw data
-        hits = raw_data["hits"] # will give a list of dicts
-       
-        #iterate through the hits
-        for itm in hits: 
-            story_id= itm["story_id"]
-            story_comment_cnt = itm["num_comments"]
-            story_creation_ts = itm["created_at_i"]
+            logger.info(f"Processing for day : {start_dttm} - {start_ts} to {end_dttm} - {end_ts}")
             
-            #pull the comment tree for each story_id
-            if story_comment_cnt > 0:  
-                throttle.wait()
-                comments_tree = dl.get_comments(story_id)
-                dl.write_json(comments_tree, 'comment',  str(story_creation_ts), str(story_id)) 
+            #start with a clean date directory 
+            f_path = dl.set_local_directory(str(day))
+            
+            curr_max_ts = end_ts
+            
+            while curr_max_ts >= start_ts:
 
-        #write the file containing all the stories retrieved
-        dl.write_json(raw_data, 'story', str(story_creation_ts), str(story_id))
+                #the search url will return 1000 hits/results maximum. If we want ee can break it(1000 hits) into 10 pages or 100 
+                #but the problem is we cannot get more than 1000 results at a time. 
+                #We are trying to get all stories submitted since yesterday, that number can be > 1000 so 
+                #we have to iterate or call the api multiple times with a different  timestamp filter to 
+                #return all the stories submitted between the timestamp values 
+                raw_data = dl.get_stories(start_ts, curr_max_ts)
 
-        #set the parameters for pagination via timestamps
-        #Since we have capped the nb of hits to 1000 per page, if the
-        #nbhits is greater than 1000 then we have more pages to traverse
-        if raw_data["nbHits"]>1000:
-            #retrieve the record with minimum timestamp from the hits list returned
-            rec_with_min_ts = min(hits, default=None, key=lambda x:x["created_at_i"]) 
+                #extract the hits list from raw data
+                hits = raw_data["hits"] # will give a list of dicts
+            
+                #iterate through the hits
+                for itm in hits: 
+                    story_id= itm["story_id"]
+                    story_comment_cnt = itm["num_comments"]
+                    story_creation_ts = itm["created_at_i"]
+                    
+                    #pull the comment tree for each story_id
+                    if story_comment_cnt > 0:  
+                        throttle.wait()
+                        comments_tree = dl.get_comments(story_id)
+                        dl.write_json(comments_tree, f_path, 'comment', str(story_creation_ts), str(story_id)) 
 
-            curr_max_ts = float(rec_with_min_ts["created_at_i"])
-            logger.info(f'curr_min_ts - {curr_max_ts}')
-        else:
-            logger.info("Reached iterating through all the stories for the given time window") 
-            break   
-      
+                #write the file containing all the stories retrieved
+                dl.write_json(raw_data, f_path, 'story',  str(story_creation_ts), str(story_id))
+
+                #set the parameters for pagination via timestamps
+                #Since we have capped the nb of hits to 1000 per page, if the
+                #nbhits is greater than 1000 then we have more pages to traverse
+                if raw_data["nbHits"]>1000:
+                    #retrieve the record with minimum timestamp from the hits list returned
+                    rec_with_min_ts = min(hits, default=None, key=lambda x:x["created_at_i"]) 
+
+                    curr_max_ts = float(rec_with_min_ts["created_at_i"])
+                    logger.info(f'curr_min_ts - {curr_max_ts}')
+                else:
+                    logger.info("Reached iterating through all the stories for the given time window") 
+                    break   
         
+            
 
 if __name__ == "__main__":
     main()

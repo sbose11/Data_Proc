@@ -36,6 +36,9 @@ curl -LsSf [https://astral.sh/uv/install.sh](https://astral.sh/uv/install.sh) | 
   ```
 
 ----------
-*Inner workings
+*Inner workings:*
 
-The python script pulls the data from hacker news api. The code fetches all stories and comments posted in the last 24 hrs (1 day) (UTC time). As of now the script is saving the json files locally. This will be moved to cloud storage in next iteration.
+The python script pulls the data from hacker news api. 
+1. Using the delta_days variable - we can pull historical data (up to 7 days) from the api starting from the execution date.   
+2. As of now the script is saving the json files locally. This will be moved to cloud storage eventually.
+3. Stories and comment files for a given date are stored under that date directory.
