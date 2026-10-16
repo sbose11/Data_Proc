@@ -1,1 +1,2 @@
 requests >= 2.32.3
+duckdb==1.5.4  # Pinning it to the same version of duck db as used by dbt.  

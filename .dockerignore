@@ -1,11 +1,13 @@
 data/
 **/.venv/
-**dbt/target/
-**/dbt/logs/
-**/dbt/dbt_paackages
+**hn_trends/target/
+**/hn_trends/logs/
+**/hn_trends/dbt_paackages
+**/raw_data/
 
 airflow/logs/
 airflow/.env
+
 
 .git/
 .vscode/

@@ -1,0 +1,26 @@
+name: hn_trends
+
+profile: duckdb_conn
+
+seed-paths: ["seeds"]
+model-paths: ["models"]
+macro-paths: ["macros"]
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# seeds:
+#   # Builds seeds into '<your_schema_name>_raw'
+#   hn_trends:
+#     +schema: raw
+
+models:
+  hn_trends:
+    +static_analysis: baseline #we have option of strict or baseline. strict will chk all sql before running anything and baseline is little relaxed on column names
+    # Materialize staging models as views, and marts as tables
+    silver:
+      +materialized: view
+      +schema: silver
+    gold:
+      +materialized: table
+      +schema: gold

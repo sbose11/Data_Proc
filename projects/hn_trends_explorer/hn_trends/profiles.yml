@@ -1,0 +1,8 @@
+duckdb_conn:
+  target: dev  #sets the default output target  
+  outputs:
+    dev: 
+      type: duckdb
+      path: "{{ env_var('DATA_DIR', '../../../data')}}/hn_trends.duckdb" # create 1 db file per project. 
+      schema: hn_proj  # This is the default duckdb schema. We can use our custom name schema here as well.  
+      threads: 4
