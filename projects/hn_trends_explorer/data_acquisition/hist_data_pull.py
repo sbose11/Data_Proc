@@ -114,13 +114,6 @@ class DataLoad:
     #type shows if the file is of type 'story' or 'comment'
     #ts is the timestamp when the story/comment was created
     def write_json(self, data, fpath :str, type: str,  ts, story_id):
-
-        #set the file path where we want to store the data 
-        #filepath = Path(f"{self._base_dir}/raw_data/{dt}/{type}/{story_id}_{ts}.json")
-        #self._logger.info(f"Filepath set to - {filepath}")
-
-        #helps with dynamic creation of directories
-        #filepath.parent.mkdir(parents=True, exist_ok = True)
        
         filepath = Path(f"{fpath}/{type}/{story_id}_{ts}.json")
         #write this file 
@@ -181,18 +174,33 @@ def main():
 
                 #extract the hits list from raw data
                 hits = raw_data["hits"] # will give a list of dicts
-            
+                all_comments =[]
+                cmt_cntr = 0
                 #iterate through the hits
                 for itm in hits: 
                     story_id= itm["story_id"]
                     story_comment_cnt = itm["num_comments"]
                     story_creation_ts = itm["created_at_i"]
-                    
-                    #pull the comment tree for each story_id
+
+                    cmt_cntr = cmt_cntr + 1
+                    #if the story has comments under it, pull the comment tree for that story_id
                     if story_comment_cnt > 0:  
                         throttle.wait()
                         comments_tree = dl.get_comments(story_id)
-                        dl.write_json(comments_tree, f_path, 'comment', str(story_creation_ts), str(story_id)) 
+                        if comments_tree:
+                            all_comments.append(comments_tree)
+
+                    # To avoid creating a comment file for every story and end up with large number of files,
+                    # we will combine the comments from 250 stories and write them to the disk
+                    # the file will be tagged with the last story_id and its creation_timestamp
+                    if all_comments is not None and cmt_cntr == 250:    
+                        dl.write_json(all_comments, f_path, 'comment', str(story_creation_ts), str(story_id)) 
+                        cmt_cntr = 0
+                        all_comments =[]
+                
+                #whatever is left write it to disk
+                if all_comments is not None and cmt_cntr > 0:
+                    dl.write_json(all_comments, f_path, 'comment', str(story_creation_ts), str(story_id))
 
                 #write the file containing all the stories retrieved
                 dl.write_json(raw_data, f_path, 'story',  str(story_creation_ts), str(story_id))

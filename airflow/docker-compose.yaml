@@ -89,7 +89,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ../projects:/opt/airflow/projects
     - ../data:/opt/airflow/data
-    - ../projects/hn_trends_explorer/dags:/opt/airflow/dags/hn_trends_explorer
+    - ../projects/hn_trends_explorer/dags:/opt/airflow/dags/hn_trends_explorer # we need this as airflow loads DAGs from python files in its configured DAG folder(/opt/airflow/dags), it won't scan any other folder for dags, so we mount it like that
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
