@@ -5,21 +5,32 @@ profile: duckdb_conn
 seed-paths: ["seeds"]
 model-paths: ["models"]
 macro-paths: ["macros"]
-clean-targets:
+test-paths: ["tests"]
+
+target-path: "target" # directory which will store compiled SQL files
+clean-targets:  # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
-# seeds:
-#   # Builds seeds into '<your_schema_name>_raw'
-#   hn_trends:
-#     +schema: raw
+seeds:
+   hn_trends:
+    +schema: silver
+    +tags: ["schema_drift"]
+    expected_story_keys:  #applies to seeds/expeccted_story_keys files
+      +column_types: 
+        key_name: varchar(50)
+        is_required: bool
+    unexpected_comment_keys: #applies to seeds/expected_comment_keys.csv file 
+      +column_types: 
+        key_name: varchar(50)
+        is_required: bool
 
 models:
   hn_trends:
     +static_analysis: baseline #we have option of strict or baseline. strict will chk all sql before running anything and baseline is little relaxed on column names
-    # Materialize staging models as views, and marts as tables
+    # Materialize staging models as tables, and marts as tables
     silver:
-      +materialized: view
+      +materialized: table
       +schema: silver
     gold:
       +materialized: table
