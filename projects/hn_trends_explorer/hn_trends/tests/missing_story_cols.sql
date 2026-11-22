@@ -3,18 +3,24 @@
   config( tags= ["schema_drift"])
 }}
 
-with k as (
-    select distinct rd.dt, unnest(json_keys(h.value)) as key_name
-    from {{ source('hn_trends_brnz', 'raw_data') }} rd,
-         json_each(rd.raw_payload, '$.hits') h
-    where rd.type = 'story'
-    and   rd.dt between '{{ var("start_date") }}' and '{{ var("end_date") }}'
-)
-select *
-from (
-select dt, e.key_name ref_kn, k.key_name actual_kn
-from {{ref('expected_story_keys')}} e
-left join k on (k.key_name = lower(e.key_name))
-where is_required = true 
+with 
+
+base as 
+(
+   select  distinct rd.dt as story_dt, 
+           json_keys(unnest( rd.raw_payload->> '$.hits[*]'))  as hits
+   from {{source("hn_trends_brnz", "raw_data")}} rd
+   where rd.type = 'story'
+   and rd.dt between '{{ var("start_date") }}' and '{{ var("end_date") }}'
+),
+unq_key_list as 
+(select distinct story_dt, unnest(hits) as actual_kn
+ from base
+),
+final as 
+(select * 
+from hn_proj_silver.expected_story_keys esk left join unq_key_list ukl on (ukl.actual_kn = lower(esk.key_name) ) 
+where esk.is_required = true
 ) 
-where actual_kn is null 
+select * 
+from final where final.actual_kn is null

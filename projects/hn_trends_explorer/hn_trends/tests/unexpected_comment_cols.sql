@@ -4,17 +4,21 @@
     severity = "warn"
    )
 }}
-with k as 
+
+with base as 
 (
-    /* even though the comments are deeply nested trees, the keys will be the same at every level so just getting them from the top lvl*/
-    select distinct rd.dt, unnest(json_keys(py.value)) as key_name
-    from {{source("hn_trends_brnz", "raw_data")}} rd, 
-    json_each(rd.raw_payload) py
+    select distinct rd.dt, json_keys(unnest(cast(json_extract(rd.raw_payload, '$[*]') as varchar[]))) as val
+    from {{source("hn_trends_brnz", "raw_data")}} rd
     where rd.type = 'comment'
-    and  rd.dt between '{{ var("start_date") }}' and '{{ var("end_date") }}'
-)
---gets hold of key names that are not in predefined csv
-select * 
-from k 
-where k.key_name not in (select lower(key_name) from {{ref('expected_comment_keys')}})
-                  
+    and rd.dt between '{{ var("start_date") }}' and '{{ var("end_date") }}'
+),   
+
+final_set_of_keys as
+(select distinct dt, unnest(val) file_keys
+from base
+) 
+select *
+from final_set_of_keys fsk 
+where fsk.file_keys not in (select lower(key_name) 
+                            from {{ref('expected_comment_keys')}}
+                            )

@@ -3,14 +3,23 @@
            severity = 'warn')
 }}
 
-with k as (
-    select distinct rd.dt, unnest(json_keys(h.value)) as key_name
-    from {{ source('hn_trends_brnz', 'raw_data') }} rd,
-         json_each(rd.raw_payload, '$.hits') h
-    where rd.type = 'story'
-    and   rd.dt between '{{ var("start_date") }}' and '{{ var("end_date") }}'
+with 
+
+base as 
+(
+   select  distinct rd.dt as story_dt, 
+           json_keys(unnest( rd.raw_payload->> '$.hits[*]'))  as key_names
+   from {{source("hn_trends_brnz", "raw_data")}} rd
+   where rd.type = 'story'
+   and rd.dt between '{{ var("start_date") }}' and '{{ var("end_date") }}'
+),
+
+
+k_list as
+(
+   select distinct story_dt, unnest(key_names)keys
+   from base 
 )
 select * 
-from k
-where key_name not in (select lower(key_name) from {{ ref('expected_story_keys') }})
---group by dt, key_name
+from k_list
+where keys not in (select lower(key_name) from {{ ref('expected_story_keys') }})
