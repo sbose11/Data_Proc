@@ -16,7 +16,6 @@ with base as
    and rd.dt between '{{ var("start_date") }}' and '{{ var("end_date") }}'
    {% endif %}
 )
-
 select dt as story_dt, 
        (hits ->> '$.story_id' ) :: bigint as story_id,
        hits ->> '$.author' as author, 
@@ -34,3 +33,5 @@ select dt as story_dt,
        (hits ->> '$.children') :: varchar[] as children,
        current_timestamp as date_loaded
 from base
+--to make sure we pull only unique story_ids for a given dt 
+qualify row_number()over(partition by story_id order by dt, story_created_at_ts)=1
