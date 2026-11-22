@@ -3,6 +3,7 @@ FROM apache/airflow:3.3.1
 
 USER root
 RUN curl -fsSL https://public.cdn.getdbt.com/fs/install/install.sh | sh -s -- --update \
+    && /root/.local/bin/dbt system update --version 2.0.12 \
     && mv /root/.local/bin/dbt /usr/local/bin/dbt \
     && dbt --version
 

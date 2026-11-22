@@ -34,8 +34,7 @@ class LoadBronzeData:
         try :
             with duckdb.connect(str(self.db_path)) as con :
                 con.execute(ddl_file)
-                print(con.execute("show all tables;").fetchall())
-                print("DB file:", self.db_path.resolve())
+                #print(con.execute("show all tables;").fetchall())
                 print(con.execute("""
                     SELECT table_schema, table_name
                     FROM information_schema.tables
@@ -68,7 +67,7 @@ class LoadBronzeData:
                         file_type = "comment"
                     if "story" in str(json_file_path): 
                         file_type = "story"   
-                    self.__logger.info(f"file_type set to -{file_type}")
+                    #self.__logger.info(f"file_type set to -{file_type}")
                     params = {"dt_param": self.proc_date, "file_type": file_type,  "src_file_param":str(json_file_path), "file_txt_param": file_contents}
                     con.execute(dml_file, params)
             self.__logger.info(f'Inserted fresh data for dt = {self.proc_date}')
@@ -79,7 +78,7 @@ class LoadBronzeData:
         self.__logger.info('Print the # of rows in raw_data table :')
         with duckdb.connect(str(self.db_path)) as con :
             print(con.execute ("select count(*) from bronze.raw_data;").fetchall())
-            #print(con.execute("select *from bronze.raw_data;").fetchall())
+            
     def set_load_dir (self):
         file_load_path = Path(__file__).resolve().parent.parent
         path = Path(f"{file_load_path}/data_acquisition/raw_data/{self.proc_date}")

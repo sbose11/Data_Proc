@@ -1,0 +1,6 @@
+sources:
+  - name: hn_trends_brnz
+    schema: bronze
+    tables:
+     - name: raw_data
+       

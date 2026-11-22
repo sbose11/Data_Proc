@@ -1,0 +1,67 @@
+models:
+  - name: _stg_hn_stories
+    columns: 
+      - name : story_dt
+        description : date the story was published
+        data_tests:
+          - not_null
+
+      - name : story_id
+        description : story identifier 
+        data_tests:
+          - not_null
+          - unique
+
+      - name : author
+        description : story author
+        data_tests:
+          - not_null
+
+      - name : title
+        description : story title
+        data_tests:
+          - not_null
+
+      - name: story_created_at_ts
+        description: story created at
+        data_tests:
+          - not_null
+
+      - name: points
+        data_tests:
+          - not_null:
+              config:
+                warn_if: ">0"      # any nulls → warning
+                error_if: ">100"   # many nulls → likely drift → error
+
+  - name: _stg_hn_comments
+    columns: 
+      - name: comment_dt
+        data_tests:
+          - not_null
+
+      - name : comment_id
+        description : comment_identifier
+        data_tests:
+          - not_null
+          - unique
+
+      - name : comment_author
+        description : comment_written_by
+        data_tests:
+          - not_null
+
+      - name : comment_created_at_ts
+        description : comment_created_at
+        data_tests:
+          - not_null
+
+      - name : comment_text
+        description : content of comment
+        data_tests:
+          - not_null
+
+      - name : comment_story_id 
+        description : the story_id linked to this comment
+        data_tests:
+          - not_null
