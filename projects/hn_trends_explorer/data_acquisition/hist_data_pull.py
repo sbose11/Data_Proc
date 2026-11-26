@@ -172,52 +172,54 @@ def main():
                 #return all the stories submitted between the timestamp values 
                 raw_data = dl.get_stories(start_ts, curr_max_ts)
 
-                #extract the hits list from raw data
-                hits = raw_data["hits"] # will give a list of dicts
-                all_comments =[]
-                cmt_cntr = 0
-                #iterate through the hits
-                for itm in hits: 
-                    story_id= itm["story_id"]
-                    story_comment_cnt = itm["num_comments"]
-                    story_creation_ts = itm["created_at_i"]
+                if raw_data :
+                    #extract the hits list from raw data
+                    hits = raw_data["hits"] # will give a list of dicts
+                    all_comments =[]
+                    cmt_cntr = 0
+                    #iterate through the hits
+                    for itm in hits: 
+                        story_id= itm["story_id"]
+                        story_comment_cnt = itm["num_comments"]
+                        story_creation_ts = itm["created_at_i"]
 
-                    cmt_cntr = cmt_cntr + 1
-                    #if the story has comments under it, pull the comment tree for that story_id
-                    if story_comment_cnt > 0:  
-                        throttle.wait()
-                        comments_tree = dl.get_comments(story_id)
-                        if comments_tree:
-                            all_comments.append(comments_tree)
+                        cmt_cntr = cmt_cntr + 1
+                        #if the story has comments under it, pull the comment tree for that story_id
+                        if story_comment_cnt > 0:  
+                            throttle.wait()
+                            comments_tree = dl.get_comments(story_id)
+                            if comments_tree:
+                                all_comments.append(comments_tree)
 
-                    # To avoid creating a comment file for every story and end up with large number of files,
-                    # we will combine the comments from 250 stories and write them to the disk
-                    # the file will be tagged with the last story_id and its creation_timestamp
-                    if all_comments is not None and cmt_cntr == 250:    
-                        dl.write_json(all_comments, f_path, 'comment', str(story_creation_ts), str(story_id)) 
-                        cmt_cntr = 0
-                        all_comments =[]
-                
-                #whatever is left write it to disk
-                if all_comments is not None and cmt_cntr > 0:
-                    dl.write_json(all_comments, f_path, 'comment', str(story_creation_ts), str(story_id))
+                        # To avoid creating a comment file for every story and end up with large number of files,
+                        # we will combine the comments from 250 stories and write them to the disk
+                        # the file will be tagged with the last story_id and its creation_timestamp
+                        if all_comments is not None and cmt_cntr == 250:    
+                            dl.write_json(all_comments, f_path, 'comment', str(story_creation_ts), str(story_id)) 
+                            cmt_cntr = 0
+                            all_comments =[]
+                    
+                    #whatever is left write it to disk
+                    if all_comments is not None and cmt_cntr > 0:
+                        dl.write_json(all_comments, f_path, 'comment', str(story_creation_ts), str(story_id))
 
-                #write the file containing all the stories retrieved
-                dl.write_json(raw_data, f_path, 'story',  str(story_creation_ts), str(story_id))
+                    #write the file containing all the stories retrieved
+                    dl.write_json(raw_data, f_path, 'story',  str(story_creation_ts), str(story_id))
 
-                #set the parameters for pagination via timestamps
-                #Since we have capped the nb of hits to 1000 per page, if the
-                #nbhits is greater than 1000 then we have more pages to traverse
-                if raw_data["nbHits"]>1000:
-                    #retrieve the record with minimum timestamp from the hits list returned
-                    rec_with_min_ts = min(hits, default=None, key=lambda x:x["created_at_i"]) 
+                    #set the parameters for pagination via timestamps
+                    #Since we have capped the nb of hits to 1000 per page, if the
+                    #nbhits is greater than 1000 then we have more pages to traverse
+                    if raw_data["nbHits"]>1000:
+                        #retrieve the record with minimum timestamp from the hits list returned
+                        rec_with_min_ts = min(hits, default=None, key=lambda x:x["created_at_i"]) 
 
-                    curr_max_ts = float(rec_with_min_ts["created_at_i"])
-                    logger.info(f'curr_min_ts - {curr_max_ts}')
-                else:
-                    logger.info("Reached iterating through all the stories for the given time window") 
-                    break   
-        
+                        curr_max_ts = float(rec_with_min_ts["created_at_i"])
+                        logger.info(f'curr_min_ts - {curr_max_ts}')
+                    else:
+                        logger.info("Reached iterating through all the stories for the given time window") 
+                        break   
+            else:
+                logger.info("No stories are posted for the provided date range ")
             
 
 if __name__ == "__main__":

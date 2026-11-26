@@ -90,7 +90,7 @@ class LoadBronzeData:
               self.load_duckdb_dml(path)
               self.query_data()
         else :
-            self._logger.info("The provided date folder does not exist. Need to pull the data for provided date from hacker news api first.")
+            self.__logger.info("The provided date folder does not exist. Need to pull the data for provided date from hacker news api first.")
         
 
 def main():
