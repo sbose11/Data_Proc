@@ -20,6 +20,7 @@ We have already mounted the volume so that the data/ folder shared between the c
 ----------------------------------------
 ## DBT 
 dbt is installed via curl and version is pinned to 2.0.12
+
 ----------------------------------------
 ## To build the docker image and get it running
 1. To build new image containing dbt run  `docker compose build`
