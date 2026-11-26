@@ -14,11 +14,15 @@
 7. This helps with better organization and maintainance of dags as it will confine the dags related to hacker_news under the hacker_news folder.
  
 ----------------------------------------
+## DuckDB
+We have already mounted the volume so that the data/ folder shared between the container and the local machne. 
 
+----------------------------------------
+## DBT 
+dbt is installed via curl and version is pinned to 2.0.12
+----------------------------------------
 ## To build the docker image and get it running
 1. To build new image containing dbt run  `docker compose build`
 2. To start up services using the new image - `docker compose up -d`
 3. To stop and remove containers use `docker compose down`
 
-## DuckDB
-We have already mounted the volume so that the data/ folder shared between the container and the local machne. 
